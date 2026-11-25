@@ -7,17 +7,13 @@ otherwise.
 ## Versioning
 
 - Single source of truth: `.claude-plugin/plugin.json`,
-  `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, and
-  `.agents/plugins/marketplace.json`. Plugin manifests must always match on
+  `.claude-plugin/marketplace.json`, and `.codex-plugin/plugin.json`. Plugin manifests must always match on
   package name and version; marketplace entries must point to the same package;
   author, license, homepage, and the public skill-bundle description must stay
   aligned.
 - Keep `CLAUDE.md` and `AGENTS.md` aligned when changing shared project rules.
   Claude-specific workflow details belong here; Codex-specific details belong in
   `AGENTS.md`.
-- Codex marketplace install uses `.codex-marketplace/x-skills/`. Do not edit that
-  generated package by hand. Update the root files first, then run
-  `python3 scripts/sync_codex_marketplace.py`.
 - **Default: bump the PATCH segment (3rd level, `0.0.X`).** This is the automatic
   behavior for every shippable commit, regardless of how large the diff feels.
   Skill renames, lib API breaks, new features: still PATCH by default.
@@ -32,10 +28,8 @@ otherwise.
 
 ## Commits
 
-- Primary author **must** be Sergey: every `git commit` needs
-  `--author="Sergey Bulaev <s@bulaev.org>"`. The harness defaults to the Claude
-  identity if you forget; verify with `git log -1 --format='%an <%ae>'` before
-  pushing.
+- This is a fork: commit under your own identity. Keep upstream credit
+  (Serge Bulaev, MIT) in README and LICENSE.
 - Co-author trailer (`Co-Authored-By: Claude ...`) is fine and welcomed.
 - Verify locally before push: build never breaks, no broken refs in `SKILL.md`,
   library smoke import passes.
@@ -54,7 +48,7 @@ otherwise.
   tweets).
 - **Skill names are public surface.** Renaming a skill is a major version bump and
   requires updating: `.codex-plugin/plugin.json`,
-  `.agents/plugins/marketplace.json`, `.claude-plugin/plugin.json`,
+  `.claude-plugin/plugin.json`,
   `.claude-plugin/marketplace.json`, root `SKILL.md` bundle list, README skill
   table, and every `x-<name>` cross-reference in sibling SKILL.md files.
 
@@ -76,15 +70,15 @@ otherwise.
 - `references/voice-profile.md` and `references/story-bank.md` (what you have to say, filled by
   `--mode interview`) ship **blank** and the user fills them.
   A filled one is personal data, not a credential: `check_no_secrets.py` fails on
-  any tracked copy marked `filled: yes`, and `sync_codex_marketplace.py` takes
-  both from HEAD rather than the working tree and refuses to copy a filled one.
-- **A project `.env` may set credentials only.** `lib/_env.py` keeps an allowlist
-  (`_DOTENV_VARIABLES`); the custom-poster variable the DIY tier executes must come
-  from the launch environment, never from a file that can arrive with a clone. No
-  module may call `load_dotenv()` itself, and every authenticated request passes
-  `allow_redirects=False` because the Publora key rides a custom header and the
-  Apify token a query parameter, neither of which `requests` strips across hosts.
-  `scripts/check_security_boundaries.py` enforces all three.
+  any tracked copy marked `filled: yes`.
+- **.env carries credentials only, from fixed paths only.** `lib/_env.py` reads
+  `~/.config/x-skills/.env` and the installed skill folder's `.env`, never a path
+  derived from the working directory, and copies only the `_DOTENV_VARIABLES`
+  allowlist. No module may call `load_dotenv()` itself. Nothing in `lib/` may
+  execute a process (the upstream DIY / `X_SKILLS_CUSTOM_POSTER` tier was removed).
+  Every authenticated request passes `allow_redirects=False` and carries its
+  credential in a header, never the query string.
+  `scripts/check_security_boundaries.py` enforces all of this.
 - `references/mcp-read-layer.md` is the read path for anyone without a shell, which
   is everyone on claude.ai: the filtered `mcp.apify.com?actors=` connector URL, the
   tool name, the four input shapes, and the mapping back to the records `_tweet`
@@ -102,8 +96,8 @@ otherwise.
   bundle: `create_post` (single tweet or thread; pass long content and Publora
   auto-splits into a numbered `(1/N)` thread) and `list_connections` /
   `x_connections` (GET /platform-connections). Skills should call
-  `lib.publish(kind, draft_text, target_url, ...)` rather than inline the
-  publora / manual / diy dispatch. Real endpoint: `POST /create-post` with
+  `lib.publish(kind, draft_text, target_url, ..., approved=True)` (only after explicit user approval) rather than inline the
+  publora / manual dispatch. Real endpoint: `POST /create-post` with
   `platforms: ["twitter-<id>"]` (an array of STRING ids), header `x-publora-key`.
 - **X has no comment/reply/reaction endpoint on Publora** (those are LinkedIn
   only), and `create-post` has no `in_reply_to`. So `kind="reply"` always routes
@@ -116,16 +110,6 @@ otherwise.
   positioned around the Publora write integration.
 
 - **Image layer (Pixfaro):** `lib/pixfaro_client.py`. Call `lib.illustrate(prompt, kind=...)` / `lib.refine(image_id, instruction)` (not the client directly); the returned hosted URL feeds `lib.publish(..., media_urls=[url])`. `refine` edits by `img_...` id (not URL); `aspect_ratio` is a ratio like `16:9` (not pixel dims). PIXFARO_TOKEN-or-manual fallback, keyed singleton + LRU cache; `overlay` brand fields come from `references/voice-profile.md` §6.
-
-## Codex marketplace package
-
-- Codex requires marketplace entries to point at a nested plugin directory. The
-  root remains the Claude-facing source layout.
-- `.agents/plugins/marketplace.json` points to `.codex-marketplace/x-skills`.
-- `scripts/sync_codex_marketplace.py` copies the root Codex manifest, `SKILL.md`,
-  `skills/`, `references/`, `lib/`, `scripts/`, `requirements.txt`, `.env.example`,
-  and `LICENSE` into the hidden package.
-- After editing any copied file, run the sync script before testing or committing.
 
 ## testing/ is gitignored
 
@@ -140,18 +124,16 @@ Run from repo root:
 
 ```bash
 python3 -c "from lib import publish, illustrate, refine, PixfaroClient, parse_x_url, PubloraClient; print('OK')"
-python3 scripts/sync_codex_marketplace.py
 ls skills/ | wc -l        # must equal 9
 python3 scripts/check_frontmatter.py   # parses; a dir count does not prove a skill loads
 python3 scripts/check_no_secrets.py    # .gitignore does not stop a rename of a tracked file
 python3 scripts/check_markdown_references.py  # run from inside the repo; it anchors on its own path
 python3 scripts/check_untrusted_rule.py  # the rule must sit in the skills, not only in references/
 python3 scripts/check_text_encoding.py  # a bare read_text() is cp1252 on Windows, mojibake or a crash
-python3 scripts/check_security_boundaries.py  # .env may not name an executable; no authenticated redirects
+python3 scripts/check_security_boundaries.py  # no process execution, fixed .env paths, header auth, no redirects
 python3 scripts/check_mcp_mapping.py  # the connector path must produce the library's records, not a second shape
 grep -rnP '\x{2014}|\x{2013}' skills/*/SKILL.md SKILL.md | grep -i '^.*description:'   # must be empty
 python3 -m json.tool .codex-plugin/plugin.json >/dev/null
-python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 python3 -m json.tool .claude-plugin/plugin.json >/dev/null
 python3 -m json.tool .claude-plugin/marketplace.json >/dev/null
 ```

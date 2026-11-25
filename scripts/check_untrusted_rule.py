@@ -24,7 +24,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SKILLS = sorted(d for d in (ROOT / "skills").iterdir() if (d / "SKILL.md").is_file())
 CANONICAL = ROOT / "references" / "untrusted-content.md"
-SECTION = re.compile(r"^## Untrusted content\s*$", re.M)
+SECTION = re.compile(r"^## Untrusted content\b[^\n]*$", re.M)
 CITES = "references/untrusted-content.md"
 
 #: Skills whose input is content somebody else wrote.
@@ -35,7 +35,7 @@ REQUIRED = {
 }
 
 #: Calls that return text somebody else wrote.
-READ_CALLS = re.compile(r"fetch_user_tweets|fetch_niche_top|fetch_tweet_replies")
+READ_CALLS = re.compile(r"fetch_user_tweets|fetch_niche_top|fetch_tweet_replies|fetch_tweet\b")
 
 
 def main() -> int:
@@ -65,6 +65,13 @@ def main() -> int:
                 f"skills/{skill.name}/SKILL.md names a read-layer call but has no "
                 f"`## Untrusted content` section. Add the section, and add the skill "
                 f"to REQUIRED in this script.")
+        if has:
+            first = SECTION.search(text).start()
+            steps = [m.start() for m in re.finditer(r"^## (?:When to use|Steps|Input|Workflow)\b", text, re.M)]
+            if steps and first > min(steps):
+                problems.append(
+                    f"skills/{skill.name}/SKILL.md has the `## Untrusted content` section "
+                    f"after its workflow. It must come first, before any fetched text is read.")
         if has and CITES not in text:
             problems.append(
                 f"skills/{skill.name}/SKILL.md has the section but never cites "

@@ -1,14 +1,14 @@
 {
   "name": "x-skills",
   "description": "9 Claude Code and Codex skills for X (Twitter) marketing: single-tweet writing, long-form thread building, AI-tell humanizer with pre-publish audit, viral hook extraction, reply and quote-tweet drafting, profile optimization, content repurposing, audience insights, and weekly content planning. Publora is the default publish layer for tweets and threads.",
-  "version": "1.0.38",
+  "version": "1.0.39",
   "author": {
-    "name": "Serge Bulaev",
-    "url": "https://github.com/sergebulaev"
+    "name": "leopiney (hardened fork of sergebulaev/x-skills)",
+    "url": "https://github.com/leopiney"
   },
   "license": "MIT",
-  "homepage": "https://github.com/sergebulaev/x-skills",
-  "repository": "https://github.com/sergebulaev/x-skills",
+  "homepage": "https://github.com/leopiney/x-skills",
+  "repository": "https://github.com/leopiney/x-skills",
   "keywords": [
     "x",
     "twitter",
@@ -26,14 +26,14 @@
     "displayName": "X (Twitter) Skills",
     "shortDescription": "X (Twitter) marketing skills for Claude Code and Codex.",
     "longDescription": "A bundle of 9 X (Twitter) marketing skills for Claude Code and Codex: single-tweet writing, long-form thread building, humanizing, hook extraction, reply and quote-tweet drafting, and content planning.",
-    "developerName": "Serge Bulaev",
+    "developerName": "leopiney (fork of Serge Bulaev's x-skills)",
     "category": "Productivity",
     "capabilities": [
       "Interactive",
       "Read",
       "Write"
     ],
-    "websiteURL": "https://github.com/sergebulaev/x-skills",
+    "websiteURL": "https://github.com/leopiney/x-skills",
     "defaultPrompt": [
       "Draft a tweet from my notes.",
       "Turn this into a 7-tweet thread.",

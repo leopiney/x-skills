@@ -1,22 +1,8 @@
-<p align="center">
-  <img src="assets/hero.png" alt="X (Twitter) marketing skills for Claude Code and Codex, open source MIT licensed" width="900" />
-</p>
+# X (Twitter) Marketing Skills for Claude Code and Codex (hardened fork)
 
-# X (Twitter) Marketing Skills for Claude Code and Codex
+> **This is a security-hardened fork of [sergebulaev/x-skills](https://github.com/sergebulaev/x-skills)**, maintained at [leopiney/x-skills](https://github.com/leopiney/x-skills). It addresses the findings from the skills.sh audits (Gen Agent Trust Hub, Socket, Snyk). See [`SECURITY.md`](SECURITY.md) for exactly what changed and why. Upstream credit: Serge Bulaev, MIT licensed.
 
-<p align="center">
-  <img src="https://img.shields.io/github/v/release/sergebulaev/x-skills?color=111827&label=release" alt="Latest release">
-  <img src="https://img.shields.io/badge/Claude_Code-Compatible-D97757?logo=anthropic&logoColor=white" alt="Claude Code Compatible">
-  <img src="https://img.shields.io/badge/Codex-Compatible-111827" alt="Codex Compatible">
-  <img src="https://img.shields.io/badge/Claude-Skills-8A63D2" alt="Claude Skills">
-  <img src="https://img.shields.io/badge/License-MIT-22C55E.svg" alt="MIT License">
-  <img src="https://img.shields.io/github/stars/sergebulaev/x-skills?style=social" alt="GitHub stars">
-  <img src="https://img.shields.io/badge/PRs-welcome-F59E0B.svg" alt="PRs Welcome">
-</p>
-
-> **Part of the [linkedin-skills](https://github.com/sergebulaev/linkedin-skills) family (400+ stars).** Same voice engine and approve-before-publish flow, now for X. Also available for [Instagram](https://github.com/sergebulaev/instagram-skills) · [YouTube](https://github.com/sergebulaev/youtube-skills) · [TikTok](https://github.com/sergebulaev/tiktok-skills) · [Threads](https://github.com/sergebulaev/threads-skills) · [Facebook](https://github.com/sergebulaev/facebook-skills).
-
-**9 skills that turn Claude Code and Codex into your X (Twitter) content team.** They write tweets and threads in your voice with corpus-validated hooks, extract the hook from any viral tweet, draft replies and quote tweets, and plan a week of content. Every draft gets the AI tells stripped and waits for your approval before anything publishes. No coding required.
+**9 skills that turn Claude Code and Codex into your X (Twitter) content team.** They write tweets and threads in your voice with corpus-validated hooks, extract the hook from any viral tweet, draft replies and quote tweets, and plan a week of content. Every draft gets the AI tells stripped and waits for your approval before anything publishes.
 
 Once installed, just ask Claude Code or Codex things like:
 
@@ -29,89 +15,39 @@ The right skill activates automatically. Then you review and approve.
 
 ## Install
 
-Pick whichever way you use Claude Code or Codex:
+Install from this fork, pinned to a reviewed release tag rather than a moving
+branch, so what runs is exactly what you audited.
 
-### Codex CLI
-
-```bash
-codex plugin marketplace add sergebulaev/x-skills
-codex plugin add x-skills@x-skills
-```
-
-To test a local clone before publishing changes:
+### Any agent (skills CLI)
 
 ```bash
-git clone https://github.com/sergebulaev/x-skills.git
-cd x-skills
-codex plugin marketplace add .
-codex plugin add x-skills@x-skills
+npx skills add https://github.com/leopiney/x-skills/tree/v1.0.39
 ```
-
-### claude.ai (web)
-
-1. Open https://claude.ai/code
-2. Go to **Skills** in the sidebar
-3. Click **Add from GitHub**
-4. Paste: `sergebulaev/x-skills`
-5. Done. The skills activate automatically when you ask about X or Twitter.
-
-### Claude Desktop (Mac / Windows)
-
-1. Open Claude Desktop
-2. Open **Settings** (gear icon)
-3. Go to **Skills**
-4. Click **Add from GitHub**
-5. Paste: `sergebulaev/x-skills`
-6. Done. Start a new conversation and ask Claude to write a tweet.
 
 ### Claude Code (CLI / VS Code / JetBrains)
 
 ```
-/plugin marketplace add sergebulaev/x-skills
+/plugin marketplace add leopiney/x-skills
 /plugin install x-skills@x-skills
 ```
 
-Or clone the repo and open it as your working directory:
+### Clone and review first (recommended)
 
 ```bash
-git clone https://github.com/sergebulaev/x-skills.git
+git clone https://github.com/leopiney/x-skills.git
 cd x-skills
+git checkout v1.0.39
+git verify-tag v1.0.39 2>/dev/null || git log -1 --format='%H %an'   # confirm the commit you reviewed
 ```
 
-### OpenClaw
+### Python dependencies (only for auto-publish / data reads / images)
 
-1. Open your OpenClaw working directory
-2. Clone the skills into it:
-   ```bash
-   git clone https://github.com/sergebulaev/x-skills.git
-   ```
-3. In OpenClaw settings, add this to your system prompt:
-   ```
-   You have X (Twitter) marketing skills in ./x-skills/.
-   For any X (Twitter) task, read the relevant skills/*/SKILL.md first.
-   Use lib/url_parser.py for URL parsing and lib/publora_client.py for publishing.
-   ```
-4. Done. Ask OpenClaw to write a X (Twitter) post.
-
-### Hermes Agent
-
-Hermes Agent (Nous Research) follows the agentskills.io open standard and loads `skills/*/SKILL.md` directly. Clone the bundle into your Hermes skills folder:
+Install the hash-pinned lockfile so pip refuses any package that does not match
+the reviewed hashes:
 
 ```bash
-git clone https://github.com/sergebulaev/x-skills.git ~/.hermes/skills/x-skills
+pip install --require-hashes -r requirements-lock.txt
 ```
-
-Coming from OpenClaw? `hermes claw migrate` imports these skills automatically. Then call `/<skill-name>` from any of your Hermes chat surfaces.
-
-### Any agent (skills CLI)
-
-One command that works across Claude Code, Codex, Cursor, and any other agent that reads SKILL.md files:
-
-```bash
-npx skills add sergebulaev/x-skills
-```
-
-> **Found this useful? [Star the repo](https://github.com/sergebulaev/x-skills).** Curated Claude Code and Codex directories rank and gate by star count, so a star is what makes these skills findable for the next person. It is the only thing we ask. No signup, no email.
 
 ## What you can do
 
@@ -177,20 +113,18 @@ Publora also ships [official MCP skills](https://github.com/publora/skills) (`np
 
 **Step 4.** Get your API key: click **Settings** (gear icon, bottom-left), then **API**, then **Create Key**. Copy the `sk_...` string.
 
-**Step 5.** Create a file called `.env` in the x-skills folder:
+**Step 5.** Create `~/.config/x-skills/.env` (or a `.env` in the installed skill folder). A `.env` in your current project directory is ignored on purpose, so a repo you clone cannot swap in someone else's keys:
 
 ```
 PUBLORA_API_KEY=sk_paste_your_key_here
 X_PLATFORM_ID=twitter-paste_your_id_here
 ```
 
-If you cloned the repo, copy the template instead:
+Or copy the template and fill it in:
 
 ```bash
-cp .env.example .env
+mkdir -p ~/.config/x-skills && cp .env.example ~/.config/x-skills/.env && chmod 600 ~/.config/x-skills/.env
 ```
-
-Then open `.env` and replace the placeholders with your real values.
 
 **Step 6.** Install two small Python packages:
 
@@ -251,8 +185,8 @@ Every skill follows these rules automatically:
 
 | Problem | Fix |
 |---|---|
-| Skills don't activate when I ask about X | Make sure you installed via the Skills panel, `/plugin install`, or `codex plugin add`. Try a new conversation. |
-| "PUBLORA_API_KEY not set" | Your `.env` file is missing or in the wrong folder. It should be in the `x-skills/` root. |
+| Skills don't activate when I ask about X | Make sure you installed via `npx skills add` or `/plugin install`. Try a new conversation. |
+| "PUBLORA_API_KEY not set" | Your `.env` file is missing or in the wrong folder. It must be `~/.config/x-skills/.env` or in the installed skill folder; a project `.env` is ignored. |
 | "401 Invalid API key" from Publora | Your API key is wrong or revoked. Go to Publora Settings > API > Create a new key. |
 | "Invalid platform ID format" | Your `X_PLATFORM_ID` is wrong. Go to Publora Channels and copy the full `twitter-...` string. |
 | My tweet got cut off / split unexpectedly | Emoji count as 2 chars on X. A 278-char tweet with two emoji is over 280, so Publora splits it. Tighten it or make it a deliberate thread. |
@@ -275,7 +209,6 @@ Every skill follows these rules automatically:
 ```
 x-skills/
   skills/             SKILL.md frontmatter; native to Claude Code and Codex, others read as markdown
-  .codex-marketplace/ generated nested Codex package (run scripts/sync_codex_marketplace.py)
   lib/                pure Python, works in any agent runtime
   references/         pure markdown, works anywhere
   scripts/            pure Python CLI, works anywhere
@@ -284,7 +217,7 @@ x-skills/
 | Runtime | Auto-discovers skills? | Setup |
 |---|---|---|
 | **Claude Code** (CLI, Desktop, Web, IDE) | Yes | Install via plugin or clone. Skills activate on matching prompts. |
-| **Codex CLI** | Yes | `codex plugin marketplace add sergebulaev/x-skills` and `codex plugin add x-skills@x-skills`. |
+| **Codex CLI** | Yes | `npx skills add https://github.com/leopiney/x-skills/tree/v1.0.39` (links into `~/.agents/skills`). |
 | **Anthropic Managed Agents** (`/v1/agents`) | Yes | Pass skill files in the agent context. |
 | **Cursor / Cline / Aider** | Manual | Read `SKILL.md` files as prompt context; import `lib/` as Python. |
 | **LangChain / AutoGen** | No | Use `lib/` as a package; feed `references/` as prompt context. |
@@ -305,9 +238,10 @@ client.create_post(
     platforms=["twitter-123456789"],
 )
 
-# Or use the high-level wrapper that handles manual / Publora / diy routing
+# Or use the high-level wrapper that handles manual / Publora routing.
+# approved=True is required and must reflect the user's explicit approval.
 publish("thread", draft_text="...", target_url="https://x.com/compose/tweet",
-        platforms=["twitter-123456789"])
+        platforms=["twitter-123456789"], approved=True)
 ```
 
 ## URL handling

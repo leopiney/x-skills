@@ -32,7 +32,7 @@ Not for a blank-page draft (use `x-post-writer` for a tweet, `x-thread-builder` 
 6. **Strip off-platform artifacts.** Remove "link in bio", "smash subscribe", "read more below", hashtag walls, @-handles that only exist elsewhere, and any "as I wrote on LinkedIn" throat-clearing. A repurposed post should not admit it was repurposed.
 7. **Humanizer pass.** Run the scrub: 2026 AI vocab by density, em dashes above the cap (at most one per tweet, never swapped for a period), stacked rule-of-three triads, generic openers and reveal bridges. Leave a single tweet's rhythm alone; on a thread never insert a punch tweet for variance. Keep the user's real numbers and named entities from the source. Canonical rules: `x-humanizer` V3.
 8. **Approval card.** Show: source -> X mapping (what became what), the container (tweet or N-tweet thread), formula used, char counts, primary goal.
-9. **On approval.** Publish via `lib.publish(kind="post", draft_text=<approved>, target_url="https://x.com/compose/tweet", platforms=[<X_PLATFORM_ID>], scheduled_time=<iso_or_None>)`. Publora auto-splits an over-length draft into a numbered thread.
+9. **On approval.** Publish via `lib.publish(kind="post", draft_text=<approved>, target_url="https://x.com/compose/tweet", platforms=[<X_PLATFORM_ID>], scheduled_time=<iso_or_None>, approved=True)` (only after the user approved this exact draft in their own words). Publora auto-splits an over-length draft into a numbered thread.
 
 ## Native-fit rules (source -> X)
 

@@ -5,8 +5,7 @@ making changes. Conventions here are mandatory unless the user asks otherwise.
 
 ## Versioning
 
-- Single source of truth: `.codex-plugin/plugin.json`,
-  `.agents/plugins/marketplace.json`, `.claude-plugin/plugin.json`, and
+- Single source of truth: `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`, and
   `.claude-plugin/marketplace.json`. Plugin manifests must always match on
   package name and version; marketplace entries must point to the same package;
   author, license, homepage, and the public skill-bundle description must stay
@@ -14,9 +13,6 @@ making changes. Conventions here are mandatory unless the user asks otherwise.
 - Keep `AGENTS.md` and `CLAUDE.md` aligned when changing shared project rules.
   Codex-specific workflow details belong here; Claude-specific details belong in
   `CLAUDE.md`.
-- Codex marketplace install uses `.codex-marketplace/x-skills/`. Do not edit that
-  generated package by hand. Update the root files first, then run
-  `python3 scripts/sync_codex_marketplace.py`.
 - **Default: bump the PATCH segment (3rd level, `0.0.X`).** This is the automatic
   behavior for every shippable commit, regardless of how large the diff feels.
   Skill renames, lib API breaks, new features: still PATCH by default.
@@ -31,9 +27,8 @@ making changes. Conventions here are mandatory unless the user asks otherwise.
 
 ## Commits
 
-- Primary author **must** be Sergey: every `git commit` needs
-  `--author="Sergey Bulaev <s@bulaev.org>"`. Verify with
-  `git log -1 --format='%an <%ae>'` before pushing.
+- This is a fork: commit under your own identity. Keep upstream credit
+  (Serge Bulaev, MIT) in README and LICENSE.
 - Co-author trailers are fine when appropriate.
 - Verify locally before push: build never breaks, no broken refs in `SKILL.md`,
   library smoke import passes.
@@ -70,15 +65,15 @@ making changes. Conventions here are mandatory unless the user asks otherwise.
 - `references/voice-profile.md` and `references/story-bank.md` (what you have to say, filled by
   `--mode interview`) ship **blank** and the user fills them.
   A filled one is personal data, not a credential: `check_no_secrets.py` fails on
-  any tracked copy marked `filled: yes`, and `sync_codex_marketplace.py` takes
-  both from HEAD rather than the working tree and refuses to copy a filled one.
-- **A project `.env` may set credentials only.** `lib/_env.py` keeps an allowlist
-  (`_DOTENV_VARIABLES`); the custom-poster variable the DIY tier executes must come
-  from the launch environment, never from a file that can arrive with a clone. No
-  module may call `load_dotenv()` itself, and every authenticated request passes
-  `allow_redirects=False` because the Publora key rides a custom header and the
-  Apify token a query parameter, neither of which `requests` strips across hosts.
-  `scripts/check_security_boundaries.py` enforces all three.
+  any tracked copy marked `filled: yes`.
+- **.env carries credentials only, from fixed paths only.** `lib/_env.py` reads
+  `~/.config/x-skills/.env` and the installed skill folder's `.env`, never a path
+  derived from the working directory, and copies only the `_DOTENV_VARIABLES`
+  allowlist. No module may call `load_dotenv()` itself. Nothing in `lib/` may
+  execute a process (the upstream DIY / `X_SKILLS_CUSTOM_POSTER` tier was removed).
+  Every authenticated request passes `allow_redirects=False` and carries its
+  credential in a header, never the query string.
+  `scripts/check_security_boundaries.py` enforces all of this.
 - `references/mcp-read-layer.md` is the read path for anyone without a shell, which
   is everyone on claude.ai: the filtered `mcp.apify.com?actors=` connector URL, the
   tool name, the four input shapes, and the mapping back to the records `_tweet`
@@ -94,7 +89,7 @@ making changes. Conventions here are mandatory unless the user asks otherwise.
 - **Write layer (Publora):** `lib/publora_client.py`. `create_post` (single tweet
   or thread; long content auto-splits into a numbered `(1/N)` thread) and
   `list_connections` / `x_connections` (GET /platform-connections). Skills call
-  `lib.publish(kind, draft_text, target_url, ...)`. Real endpoint:
+  `lib.publish(kind, draft_text, target_url, ..., approved=True)` (only after explicit user approval). Real endpoint:
   `POST /create-post` with `platforms: ["twitter-<id>"]` (array of STRING ids),
   header `x-publora-key`.
 - **X has no comment/reply/reaction endpoint on Publora**, and `create-post` has
@@ -103,16 +98,6 @@ making changes. Conventions here are mandatory unless the user asks otherwise.
   ask the user to paste tweet text. Any future tweet-read actor stays gated
   behind `APIFY_TOKEN` with a paste fallback.
 - Don't name competing third-party schedulers in committed files.
-
-## Codex marketplace package
-
-- Codex requires marketplace entries to point at a nested plugin directory. The
-  root remains the Claude-facing source layout.
-- `.agents/plugins/marketplace.json` points to `.codex-marketplace/x-skills`.
-- `scripts/sync_codex_marketplace.py` copies the root Codex manifest, `SKILL.md`,
-  `skills/`, `references/`, `lib/`, `scripts/`, `requirements.txt`, `.env.example`,
-  and `LICENSE` into the hidden package.
-- After editing any copied file, run the sync script before testing or committing.
 
 ## testing/ is gitignored
 
@@ -126,17 +111,15 @@ Run from repo root:
 
 ```bash
 python3 -c "from lib import publish, parse_x_url, PubloraClient; print('OK')"
-python3 scripts/sync_codex_marketplace.py
 ls skills/ | wc -l        # must equal 9
 python3 scripts/check_frontmatter.py   # parses; a dir count does not prove a skill loads
 python3 scripts/check_no_secrets.py    # .gitignore does not stop a rename of a tracked file
 python3 scripts/check_markdown_references.py  # run from inside the repo; it anchors on its own path
 python3 scripts/check_untrusted_rule.py  # the rule must sit in the skills, not only in references/
 python3 scripts/check_text_encoding.py  # a bare read_text() is cp1252 on Windows, mojibake or a crash
-python3 scripts/check_security_boundaries.py  # .env may not name an executable; no authenticated redirects
+python3 scripts/check_security_boundaries.py  # no process execution, fixed .env paths, header auth, no redirects
 python3 scripts/check_mcp_mapping.py  # the connector path must produce the library's records, not a second shape
 python3 -m json.tool .codex-plugin/plugin.json >/dev/null
-python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 python3 -m json.tool .claude-plugin/plugin.json >/dev/null
 python3 -m json.tool .claude-plugin/marketplace.json >/dev/null
 ```

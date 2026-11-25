@@ -75,7 +75,8 @@ when the result you are citing is someone else's.
    push it over 280), suggested posting window, primary goal.
 8. **On approval.** Call `lib.publish(kind="post", draft_text=<approved>,
    target_url="https://x.com/compose/tweet", platforms=[<X_PLATFORM_ID>],
-   scheduled_time=<iso_or_None>)`. The wrapper handles Publora / manual / diy
+   scheduled_time=<iso_or_None>, approved=True)` (only after the user approved
+   this exact draft in their own words). The wrapper handles Publora / manual
    routing. If the content runs long, Publora auto-splits it into a numbered
    thread.
 

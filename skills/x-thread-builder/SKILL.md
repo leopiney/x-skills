@@ -84,7 +84,8 @@ so the user sees exactly how the thread will land before approving.
    total tweet count, the formula, and the goal. Confirm any `---` breaks.
 10. **On approval.** Call `lib.publish(kind="thread", draft_text=<full thread
     with --- breaks>, target_url="https://x.com/compose/tweet",
-    platforms=[<X_PLATFORM_ID>], scheduled_time=<iso_or_None>)`. Publora posts
+    platforms=[<X_PLATFORM_ID>], scheduled_time=<iso_or_None>, approved=True)`
+    (only after the user approved this exact thread in their own words). Publora posts
     the chain in one call and returns a `postGroupId`.
 
 ## Hard rules

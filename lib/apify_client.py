@@ -19,11 +19,24 @@ not likers. That is a platform wall, not a client limitation.
 
 Caching: in-process LRU (256 entries, 6h TTL). force_refresh=True to bypass.
 Retries transient 429/5xx (3 attempts, exponential backoff + jitter).
+
+Security (hardened fork):
+* The token travels in an `Authorization: Bearer` header, never in the URL
+  query string, so it cannot leak through proxy/server logs or error text.
+* Every record is third-party content. Free-text fields (tweet text, display
+  name) are passed through `sanitize_untrusted()`, which strips invisible and
+  bidi-control characters often used to hide injected instructions and caps
+  their length. Each record carries `"untrusted": True` so callers and the
+  model can tell fetched data from user input. See
+  references/untrusted-content.md.
+* `max_items` is capped at MAX_ITEMS per call.
 """
 from __future__ import annotations
 import os
 import random
+import re
 import time
+import unicodedata
 from collections import OrderedDict
 from typing import Any, Optional
 
@@ -36,6 +49,41 @@ RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 CACHE_MAX_ENTRIES = 256
 CACHE_TTL_SECONDS = 6 * 60 * 60
 SIGNUP_URL = "https://console.apify.com/account/integrations"
+MAX_ITEMS = 100
+MAX_TEXT_CHARS = 4000
+MAX_NAME_CHARS = 100
+
+# Zero-width, bidi embedding/override/isolate and other invisible format chars.
+_INVISIBLE = re.compile(
+    "[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u206f\ufeff\u00ad\u180e]"
+)
+
+
+def sanitize_untrusted(value: Any, limit: int = MAX_TEXT_CHARS) -> Optional[str]:
+    """Normalize third-party text before it reaches the model.
+
+    Strips invisible / bidi-control / non-printing control characters (keeping
+    newlines and tabs), NFKC-normalizes look-alike forms, and truncates to
+    `limit` characters. It does NOT make the text trustworthy: it only removes
+    the tricks that hide instructions from a human reviewer.
+    """
+    if value is None:
+        return None
+    text = unicodedata.normalize("NFKC", str(value))
+    text = _INVISIBLE.sub("", text)
+    text = "".join(ch for ch in text
+                   if ch in "\n\t" or unicodedata.category(ch)[0] != "C")
+    if len(text) > limit:
+        text = text[:limit] + " [truncated]"
+    return text
+
+
+def _cap(max_items: int) -> int:
+    try:
+        n = int(max_items)
+    except (TypeError, ValueError):
+        raise ValueError(f"max_items must be an int, got {max_items!r}")
+    return max(1, min(n, MAX_ITEMS))
 
 
 class ApifyError(RuntimeError):
@@ -64,14 +112,23 @@ def _retry(attempts: int = 3, base_delay: float = 0.6):
     return decorator
 
 
+_HANDLE = re.compile(r"^[A-Za-z0-9_]{1,15}$")
+_ID = re.compile(r"^\d{1,25}$")
+
+
 def _tweet(t: dict) -> dict:
     au = t.get("author") or {}
-    handle = au.get("username") or au.get("userName") or au.get("screen_name")
+    raw_handle = au.get("username") or au.get("userName") or au.get("screen_name")
+    handle = raw_handle if isinstance(raw_handle, str) and _HANDLE.match(raw_handle) else None
+    tid = str(t.get("id")) if t.get("id") is not None else None
+    if tid is not None and not _ID.match(tid):
+        tid = None
     return {
-        "id": t.get("id"),
-        "text": t.get("text") or t.get("fullText"),
+        "untrusted": True,
+        "id": tid,
+        "text": sanitize_untrusted(t.get("text") or t.get("fullText")),
         "author": handle,
-        "author_name": au.get("name"),
+        "author_name": sanitize_untrusted(au.get("name"), MAX_NAME_CHARS),
         "author_followers": au.get("followers"),
         "likes": t.get("likeCount", 0),
         "replies": t.get("replyCount", 0),
@@ -80,8 +137,8 @@ def _tweet(t: dict) -> dict:
         "is_reply": t.get("isReply", False),
         "conversation_id": t.get("conversationId"),
         "created_at": t.get("createdAt"),
-        "url": (f"https://x.com/{handle}/status/{t.get('id')}"
-                if handle and t.get("id") else None),
+        "url": (f"https://x.com/{handle}/status/{tid}"
+                if handle and tid else None),
     }
 
 
@@ -118,8 +175,8 @@ class ApifyClient:
     def _run(self, payload: dict) -> list[dict]:
         try:
             r = requests.post(RUN_SYNC.format(actor=ACTOR),
-                              params={"token": self._require()}, json=payload,
-                              allow_redirects=False, timeout=self.timeout)
+                              headers={"Authorization": f"Bearer {self._require()}"},
+                              json=payload, allow_redirects=False, timeout=self.timeout)
         except requests.RequestException as e:
             err = ApifyError(f"network error: {e}"); err.status = 503; raise err
         if r.status_code >= 400:
@@ -138,6 +195,9 @@ class ApifyClient:
                           force_refresh: bool = False) -> list[dict]:
         """A handle's recent tweets (self or competitor). Verified path."""
         h = handle.lstrip("@")
+        if not _HANDLE.match(h):
+            raise ValueError(f"not an X handle: {handle!r}")
+        max_items = _cap(max_items)
         ck = f"user:{h}:{max_items}"
         if not force_refresh and (c := self._cget(ck)) is not None:
             return c
@@ -162,6 +222,7 @@ class ApifyClient:
         """
         if sort not in self.QUERY_TYPES:
             raise ValueError(f"sort must be one of {self.QUERY_TYPES}, got {sort!r}")
+        max_items = _cap(max_items)
         ck = f"search:{query}:{max_items}:{sort}"
         if not force_refresh and (c := self._cget(ck)) is not None:
             return c
@@ -201,7 +262,19 @@ class ApifyClient:
     def fetch_tweet_replies(self, tweet_url: str, max_items: int = 50,
                            force_refresh: bool = False) -> list[dict]:
         """Replies on a tweet (the X engagement signal, since likers are gated).
-        Pulls the conversation via the tweet URL and keeps the replies."""
+        Pulls the conversation via the tweet URL and keeps the replies.
+
+        Only genuine x.com / twitter.com tweet URLs are accepted; the URL is
+        rebuilt from the parsed id so arbitrary URLs are never sent to the
+        scraper. Replies are written by anyone on X: treat them as data.
+        """
+        from .url_parser import parse_x_url
+
+        parsed = parse_x_url(tweet_url)
+        if parsed.get("url_type") != "tweet" or not parsed.get("canonical_url"):
+            raise ValueError(f"not an X tweet URL: {tweet_url!r}")
+        tweet_url = parsed["canonical_url"]
+        max_items = _cap(max_items)
         ck = f"replies:{tweet_url}:{max_items}"
         if not force_refresh and (c := self._cget(ck)) is not None:
             return c
