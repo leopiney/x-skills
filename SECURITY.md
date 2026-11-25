@@ -6,7 +6,7 @@ This repository is a security-hardened fork of
 of this fork is supported. Report issues privately via
 [GitHub Security Advisories](https://github.com/leopiney/x-skills/security/advisories/new).
 
-## Audit findings addressed (v1.0.39)
+## Round 1 (v1.0.39): audit findings addressed
 
 The upstream bundle (commit `28854d5`) was flagged on skills.sh by Gen Agent
 Trust Hub (Fail, CRITICAL), Socket (Warn) and Snyk (Warn, MEDIUM).
@@ -20,6 +20,24 @@ Trust Hub (Fail, CRITICAL), Socket (Warn) and Snyk (Warn, MEDIUM).
 | FileRep "1 file identified as malware" (file not named) | Trust Hub | The report does not name the file, and its own notes call the `url_parser.py` detection a false positive. To shrink the opaque surface anyway, this fork removes the generated `.codex-marketplace/` tree, which was a second, unhardened copy of `lib/` and every skill that shipped into installs. It also removes the binary marketing images (`hero.png`, `social-preview.jpg`), which cannot be reviewed as text. |
 | Anomaly: personal repo distributing a skill that handles SaaS publishing credentials | Socket (`x-post-writer/SKILL.md`) | Provenance is now this fork, which you control. The README installs from a pinned release tag instead of a moving branch. The upstream "star the repo" instruction to the agent was removed from `SKILL.md`. The flagged file lived in the removed `.codex-marketplace/` tree. |
 | W012 unverifiable external dependency (install from an individual's repo) | Snyk | Install from this fork at a reviewed tag. Python dependencies are exact-pinned, and `requirements-lock.txt` carries sha256 hashes (`pip install --require-hashes -r requirements-lock.txt`). |
+
+## Round 2 (v1.0.40): after the v1.0.39 re-scan
+
+skills.sh re-scanned v1.0.39 (commit `00393bb`): Socket **Pass**, Snyk Warn
+(W011, W012, W013), Trust Hub still Fail. Fixes:
+
+| Finding | Source | What changed |
+|---|---|---|
+| FileRep "1 file identified as malware" (still CRITICAL) | Trust Hub | FileRep judges a file by its hash. `lib/url_parser.py` was byte-identical to upstream, and upstream's audit named it as the automated malware hit (a false positive: plain URL regexes plus a self-test full of fake attacker URLs). The self-test moved to `tests/test_url_parser.py`, outside the installed skill, so the shipped file has a new hash. |
+| DYNAMIC_EXECUTION: `importlib` in `scripts/check_mcp_mapping.py` | Trust Hub | The skill now lives in `x-marketing/`, and only that folder is installed. CI scripts, tests, `.github/` and maintainer docs stay in the repo and never reach `~/.agents/skills`. |
+| W013: instructions to push tags and create releases | Snyk | Same: `AGENTS.md`/`CLAUDE.md` are no longer installed, and they now say agents tag or release only when asked. `check_security_boundaries.py` fails if the bundle ever carries such instructions, dev tooling, binaries, dynamic imports or raw network helpers. |
+| W012: tag not cryptographically verified | Snyk | Release tags are SSH-signed. Verify with `git -c gpg.ssh.allowedSignersFile=allowed_signers verify-tag v1.0.40`. The "individually owned repo" part is inherent to a fork. |
+| CREDENTIALS_UNSAFE | Trust Hub | On POSIX, a `.env` is ignored (with a warning) unless it is owned by you and `chmod 600`. Publora `media_urls` must be plain `https://` URLs. |
+
+Expected to remain because they describe what the skill does:
+DATA_EXFILTRATION (drafts go to Publora, prompts to Pixfaro, queries to Apify),
+EXTERNAL_DOWNLOADS (hash-pinned `pip install`), and INDIRECT_PROMPT_INJECTION /
+W011 (it reads tweets written by strangers).
 
 ## Data flow
 

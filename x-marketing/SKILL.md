@@ -66,7 +66,8 @@ into a numbered `(1/N)` thread at sentence boundaries.
 3. Copy your API key from Publora's API panel
 4. Put them in `~/.config/x-skills/.env` (or a `.env` in the installed skill
    folder). A `.env` in your current project or its parents is ignored on
-   purpose, so a cloned repo cannot swap in someone else's keys:
+   purpose, so a cloned repo cannot swap in someone else's keys. The file must
+   be private (`chmod 600`), or it is ignored:
    ```
    PUBLORA_API_KEY=sk_...
    X_PLATFORM_ID=twitter-...

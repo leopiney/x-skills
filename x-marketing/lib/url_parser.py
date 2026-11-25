@@ -51,9 +51,10 @@ def _registrable_host(text: str) -> str:
     """Extract the real host from a URL (with or without scheme), lowercased,
     with a leading www./m./mobile. stripped. Empty string if there is no host.
 
-    Using urlparse here (instead of trusting the regex) is what blocks spoof
-    hosts like vxtwitter.com, fxtwitter.com, mytwitter.com, and
-    'evil.com/twitter.com/...': those carry a host that is not in `_X_HOSTS`.
+    Using urlparse here (instead of trusting the regex) is what blocks
+    look-alike hosts and URLs that only mention x.com in their path: those
+    carry a host that is not in `_X_HOSTS`. Tests: tests/test_url_parser.py
+    in the repository (not shipped with the installed skill).
     """
     # urlparse only fills netloc when a scheme (or leading //) is present.
     parsed = urlparse(text if "://" in text else "//" + text)
@@ -149,51 +150,3 @@ def build_tweet_url(handle: str, tweet_id: str) -> str:
     """Format a canonical x.com tweet URL from a handle and tweet id."""
     handle = handle.lstrip("@")
     return f"https://x.com/{handle}/status/{tweet_id}"
-
-
-if __name__ == "__main__":
-    import json
-    import sys
-
-    if sys.argv[1:]:
-        examples = sys.argv[1:]
-    else:
-        examples = [
-            "https://x.com/paulg/status/1790000000000000000?s=20",
-            "https://twitter.com/naval/status/1002103360646823936",
-            "https://x.com/levelsio",
-            "https://x.com/i/web/status/1790000000000000000",
-        ]
-
-        # --- Host-validation self-test (spoofs must NOT parse as X) ---
-        spoofs = [
-            "https://vxtwitter.com/elonmusk/status/1790000000000000000",
-            "https://fxtwitter.com/elonmusk/status/1790000000000000000",
-            "https://mytwitter.com/elonmusk/status/1790000000000000000",
-            "https://evil.com/twitter.com/x/status/1790000000000000000",
-            "https://evil.com/x.com/levelsio",
-        ]
-        for s in spoofs:
-            assert parse_x_url(s)["url_type"] == "unknown", f"spoof leaked: {s}"
-
-        # Genuine URLs (incl. mobile.) must still parse.
-        assert parse_x_url(
-            "https://x.com/paulg/status/1790000000000000000?s=20"
-        ) == {
-            "handle": "paulg",
-            "tweet_id": "1790000000000000000",
-            "url_type": "tweet",
-            "canonical_url": "https://x.com/paulg/status/1790000000000000000",
-        }
-        assert parse_x_url(
-            "https://mobile.twitter.com/naval/status/1002103360646823936"
-        )["url_type"] == "tweet"
-        assert parse_x_url("https://x.com/levelsio")["url_type"] == "profile"
-        assert parse_x_url("twitter.com/jack")["url_type"] == "profile"
-        assert parse_x_url("1790000000000000000")["url_type"] == "tweet"
-        print("self-test OK: spoof hosts rejected, real URLs parse\n")
-
-    for u in examples:
-        print(u)
-        print(json.dumps(parse_x_url(u), indent=2))
-        print()

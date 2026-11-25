@@ -3,10 +3,21 @@
 This file is for any Codex agent working on this repository. Read it before
 making changes. Conventions here are mandatory unless the user asks otherwise.
 
+## Repository layout
+
+- `x-marketing/` is the installable skill and the ONLY folder users install
+  (`npx skills add https://github.com/leopiney/x-skills/tree/<tag>/x-marketing`).
+  It holds `SKILL.md`, `skills/`, `references/`, `lib/`, `requirements*.txt`,
+  `.env.example`, `LICENSE` and the plugin manifests. Nothing that executes,
+  fetches, or instructs an agent to change repos or services belongs in it.
+- Repo tooling stays outside the bundle: `scripts/` (CI checks), `tests/`,
+  `.github/`, and these maintainer docs. Paths below that name `skills/`,
+  `references/` or `lib/` mean the ones inside `x-marketing/`.
+
 ## Versioning
 
-- Single source of truth: `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`, and
-  `.claude-plugin/marketplace.json`. Plugin manifests must always match on
+- Single source of truth: `x-marketing/.codex-plugin/plugin.json`, `x-marketing/.claude-plugin/plugin.json`,
+  and the root `.claude-plugin/marketplace.json` (source `./x-marketing`). Plugin manifests must always match on
   package name and version; marketplace entries must point to the same package;
   author, license, homepage, and the public skill-bundle description must stay
   aligned.
@@ -19,11 +30,10 @@ making changes. Conventions here are mandatory unless the user asks otherwise.
 - Only bump MINOR or MAJOR when **the user explicitly asks** for a higher rank
   ("this is minor", "make it 2.0", "bump major"). Do not promote on your own
   initiative even if semver textbook says so.
-- After bumping, two steps are required:
-  1. Tag the commit: `git tag -a v<X.Y.Z> -m "..."` + `git push origin v<X.Y.Z>`
-  2. **Publish a GitHub Release** for the tag: `gh release create v<X.Y.Z> --title "v<X.Y.Z>" --notes "<changelog>" --latest`
-  A tag alone does NOT update the README release badge. The shields.io badge
-  reads from the Releases API, not from raw tags. Skipping step 2 leaves it stale.
+- Release tags are SSH-signed (`tag.gpgSign` with the key listed in
+  `allowed_signers`). Users verify with
+  `git -c gpg.ssh.allowedSignersFile=allowed_signers verify-tag v<X.Y.Z>`.
+  The maintainer tags and publishes releases; agents only do so when asked.
 
 ## Commits
 
@@ -110,8 +120,9 @@ making changes. Conventions here are mandatory unless the user asks otherwise.
 Run from repo root:
 
 ```bash
-python3 -c "from lib import publish, parse_x_url, PubloraClient; print('OK')"
-ls skills/ | wc -l        # must equal 9
+cd x-marketing && python3 -c "from lib import publish, parse_x_url, PubloraClient; print('OK')" && cd ..
+ls x-marketing/skills/ | wc -l        # must equal 9
+python3 tests/test_url_parser.py
 python3 scripts/check_frontmatter.py   # parses; a dir count does not prove a skill loads
 python3 scripts/check_no_secrets.py    # .gitignore does not stop a rename of a tracked file
 python3 scripts/check_markdown_references.py  # run from inside the repo; it anchors on its own path
@@ -119,8 +130,8 @@ python3 scripts/check_untrusted_rule.py  # the rule must sit in the skills, not 
 python3 scripts/check_text_encoding.py  # a bare read_text() is cp1252 on Windows, mojibake or a crash
 python3 scripts/check_security_boundaries.py  # no process execution, fixed .env paths, header auth, no redirects
 python3 scripts/check_mcp_mapping.py  # the connector path must produce the library's records, not a second shape
-python3 -m json.tool .codex-plugin/plugin.json >/dev/null
-python3 -m json.tool .claude-plugin/plugin.json >/dev/null
+python3 -m json.tool x-marketing/.codex-plugin/plugin.json >/dev/null
+python3 -m json.tool x-marketing/.claude-plugin/plugin.json >/dev/null
 python3 -m json.tool .claude-plugin/marketplace.json >/dev/null
 ```
 

@@ -15,13 +15,15 @@ The right skill activates automatically. Then you review and approve.
 
 ## Install
 
-Install from this fork, pinned to a reviewed release tag rather than a moving
-branch, so what runs is exactly what you audited.
+Install from this fork, pinned to a reviewed, signed release tag rather than a
+moving branch, so what runs is exactly what you audited. Only the `x-marketing/`
+folder is the skill. Repo tooling (`scripts/`, `tests/`, CI) and maintainer docs
+stay out of your install.
 
 ### Any agent (skills CLI)
 
 ```bash
-npx skills add https://github.com/leopiney/x-skills/tree/v1.0.39
+npx skills add https://github.com/leopiney/x-skills/tree/v1.0.40/x-marketing
 ```
 
 ### Claude Code (CLI / VS Code / JetBrains)
@@ -36,8 +38,8 @@ npx skills add https://github.com/leopiney/x-skills/tree/v1.0.39
 ```bash
 git clone https://github.com/leopiney/x-skills.git
 cd x-skills
-git checkout v1.0.39
-git verify-tag v1.0.39 2>/dev/null || git log -1 --format='%H %an'   # confirm the commit you reviewed
+git -c gpg.ssh.allowedSignersFile=allowed_signers verify-tag v1.0.40   # must print: Good "git" signature
+git checkout v1.0.40
 ```
 
 ### Python dependencies (only for auto-publish / data reads / images)
@@ -46,7 +48,7 @@ Install the hash-pinned lockfile so pip refuses any package that does not match
 the reviewed hashes:
 
 ```bash
-pip install --require-hashes -r requirements-lock.txt
+pip install --require-hashes -r x-marketing/requirements-lock.txt
 ```
 
 ## What you can do
@@ -123,13 +125,13 @@ X_PLATFORM_ID=twitter-paste_your_id_here
 Or copy the template and fill it in:
 
 ```bash
-mkdir -p ~/.config/x-skills && cp .env.example ~/.config/x-skills/.env && chmod 600 ~/.config/x-skills/.env
+mkdir -p ~/.config/x-skills && cp x-marketing/.env.example ~/.config/x-skills/.env && chmod 600 ~/.config/x-skills/.env
 ```
 
 **Step 6.** Install two small Python packages:
 
 ```bash
-pip install requests python-dotenv
+pip install --require-hashes -r x-marketing/requirements-lock.txt
 ```
 
 **Step 7.** Test it. Ask Claude Code or Codex:
@@ -144,9 +146,9 @@ If Publora returns a `postGroupId`, you're set. Cancel the post in the Publora d
 
 A tweet with a visual gets more engagement. The Post Writer can generate an inline image or a quote-card of your hook and attach it automatically when publishing. Without a key it drafts the image prompt and asks you to generate it yourself, so nothing breaks.
 
-[Pixfaro](https://pixfaro.com) is a single image API over multiple models (from `flux-schnell` at $0.004 to `gpt-5-image`). It composites your handle, brand color, or logo onto the image as a **pixel-exact overlay**, so a cheap base model still renders crisp text on a quote-card. Pull those brand fields from your [Voice & Brand Profile](references/voice-profile.md) (section 6) and every asset stays on-brand.
+[Pixfaro](https://pixfaro.com) is a single image API over multiple models (from `flux-schnell` at $0.004 to `gpt-5-image`). It composites your handle, brand color, or logo onto the image as a **pixel-exact overlay**, so a cheap base model still renders crisp text on a quote-card. Pull those brand fields from your [Voice & Brand Profile](x-marketing/references/voice-profile.md) (section 6) and every asset stays on-brand.
 
-Setup: drop `PIXFARO_TOKEN=pf_live_...` into your `.env`. The thin client at `lib/pixfaro_client.py` and the wrappers `lib.illustrate(prompt, kind="wide")` / `lib.refine(image_id, instruction)` return a hosted URL that flows straight into `lib.publish(..., media_urls=[url])`. `refine` edits a prior image by its id (cheaper than regenerating); results carry `cost`, `balance_after`, and a `premium` flag so the skills never quietly spend on a pricey model.
+Setup: drop `PIXFARO_TOKEN=pf_live_...` into your `.env`. The thin client at `x-marketing/lib/pixfaro_client.py` and the wrappers `lib.illustrate(prompt, kind="wide")` / `lib.refine(image_id, instruction)` return a hosted URL that flows straight into `lib.publish(..., media_urls=[url])`. `refine` edits a prior image by its id (cheaper than regenerating); results carry `cost`, `balance_after`, and a `premium` flag so the skills never quietly spend on a pricey model.
 
 ## Optional: read real X data with Apify
 
@@ -168,7 +170,7 @@ https://mcp.apify.com?actors=xquik/x-tweet-scraper
 
 Sign in with OAuth on first use. Same actor, same inputs, same cost, no key on disk. **Keep the `?actors=` filter**: the bare `https://mcp.apify.com` also hands the agent `search-actors` and `call-actor`, which can run anything in the Apify Store at whatever that actor charges.
 
-The skills use whichever is available and fall back to asking you to paste. Details and the field mapping: [`references/mcp-read-layer.md`](references/mcp-read-layer.md).
+The skills use whichever is available and fall back to asking you to paste. Details and the field mapping: [`references/mcp-read-layer.md`](x-marketing/references/mcp-read-layer.md).
 
 ## Voice rules
 
@@ -186,18 +188,18 @@ Every skill follows these rules automatically:
 | Problem | Fix |
 |---|---|
 | Skills don't activate when I ask about X | Make sure you installed via `npx skills add` or `/plugin install`. Try a new conversation. |
-| "PUBLORA_API_KEY not set" | Your `.env` file is missing or in the wrong folder. It must be `~/.config/x-skills/.env` or in the installed skill folder; a project `.env` is ignored. |
+| "PUBLORA_API_KEY not set" | Your `.env` file is missing, in the wrong folder, or readable by other users (run `chmod 600` on it). It must be `~/.config/x-skills/.env` or in the installed skill folder; a project `.env` is ignored. |
 | "401 Invalid API key" from Publora | Your API key is wrong or revoked. Go to Publora Settings > API > Create a new key. |
 | "Invalid platform ID format" | Your `X_PLATFORM_ID` is wrong. Go to Publora Channels and copy the full `twitter-...` string. |
 | My tweet got cut off / split unexpectedly | Emoji count as 2 chars on X. A 278-char tweet with two emoji is over 280, so Publora splits it. Tighten it or make it a deliberate thread. |
 | My reply didn't auto-post | X replies have no Publora endpoint by design. The Reply Drafter returns a copy-paste block. Post it yourself. |
-| `pip install` fails | Use a virtual environment: `python -m venv venv && source venv/bin/activate && pip install requests python-dotenv` |
+| `pip install` fails | Use a virtual environment: `python -m venv venv && source venv/bin/activate && pip install --require-hashes -r x-marketing/requirements-lock.txt` |
 
 ## Cross-cutting references
 
-- [`references/hook-formulas.md`](references/hook-formulas.md) - the 11 X hook formulas with skeletons and goal tags
-- [`references/algorithm-heuristics.md`](references/algorithm-heuristics.md) - 2026 X ranking signals, timing, and limits
-- [`references/voice-rules.md`](references/voice-rules.md) - the canonical voice rules every skill inherits
+- [`references/hook-formulas.md`](x-marketing/references/hook-formulas.md) - the 11 X hook formulas with skeletons and goal tags
+- [`references/algorithm-heuristics.md`](x-marketing/references/algorithm-heuristics.md) - 2026 X ranking signals, timing, and limits
+- [`references/voice-rules.md`](x-marketing/references/voice-rules.md) - the canonical voice rules every skill inherits
 
 ---
 
@@ -208,16 +210,20 @@ Every skill follows these rules automatically:
 
 ```
 x-skills/
-  skills/             SKILL.md frontmatter; native to Claude Code and Codex, others read as markdown
-  lib/                pure Python, works in any agent runtime
-  references/         pure markdown, works anywhere
-  scripts/            pure Python CLI, works anywhere
+  x-marketing/        THE SKILL (the only folder that gets installed)
+    SKILL.md          bundle entry point
+    skills/           9 skills; SKILL.md frontmatter, native to Claude Code and Codex
+    lib/              pure Python, works in any agent runtime
+    references/       pure markdown, works anywhere
+  scripts/            repo checks run in CI (not installed)
+  tests/              library tests (not installed)
+  allowed_signers     SSH key that signs release tags
 ```
 
 | Runtime | Auto-discovers skills? | Setup |
 |---|---|---|
 | **Claude Code** (CLI, Desktop, Web, IDE) | Yes | Install via plugin or clone. Skills activate on matching prompts. |
-| **Codex CLI** | Yes | `npx skills add https://github.com/leopiney/x-skills/tree/v1.0.39` (links into `~/.agents/skills`). |
+| **Codex CLI** | Yes | `npx skills add https://github.com/leopiney/x-skills/tree/v1.0.40/x-marketing` (links into `~/.agents/skills`). |
 | **Anthropic Managed Agents** (`/v1/agents`) | Yes | Pass skill files in the agent context. |
 | **Cursor / Cline / Aider** | Manual | Read `SKILL.md` files as prompt context; import `lib/` as Python. |
 | **LangChain / AutoGen** | No | Use `lib/` as a package; feed `references/` as prompt context. |
@@ -225,7 +231,7 @@ x-skills/
 ## Generic Python agent quickstart
 
 ```python
-import sys; sys.path.insert(0, "path/to/x-skills")
+import sys; sys.path.insert(0, "path/to/x-skills/x-marketing")
 from lib import parse_x_url, PubloraClient, publish
 
 parsed = parse_x_url("https://x.com/paulg/status/1790000000000000000?s=20")
@@ -246,7 +252,7 @@ publish("thread", draft_text="...", target_url="https://x.com/compose/tweet",
 
 ## URL handling
 
-`lib/url_parser.py` parses X tweet and profile URLs on both hosts:
+`x-marketing/lib/url_parser.py` parses X tweet and profile URLs on both hosts:
 
 | URL fragment | Parsed |
 |---|---|
@@ -256,7 +262,7 @@ publish("thread", draft_text="...", target_url="https://x.com/compose/tweet",
 | `x.com/HANDLE` | `{handle, url_type: "profile"}` |
 
 ```bash
-python lib/url_parser.py "https://x.com/paulg/status/1790000000000000000"
+python3 tests/test_url_parser.py   # host-validation and parsing tests
 ```
 
 ## Why a reply is just a tweet

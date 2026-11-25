@@ -13,6 +13,10 @@
    load_dotenv() call reopens boundary 2 for whatever imports it.
 4. **Authenticated requests may not follow redirects**, and credentials ride
    headers, never the URL query string (no `params={"token": ...}`).
+5. **The installed bundle (x-marketing/) carries only the skill.** No repo
+   tooling, maintainer docs, binaries, dynamic imports, process execution,
+   raw network helpers, or instructions telling an agent to push, tag or
+   publish releases. Those belong outside x-marketing/.
 
 Run from the repo root:
 
@@ -22,7 +26,8 @@ import pathlib
 import re
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+REPO = pathlib.Path(__file__).resolve().parent.parent
+ROOT = REPO / "x-marketing"  # the installable bundle
 LIB = ROOT / "lib"
 ENV = LIB / "_env.py"
 POSTER = "X_SKILLS_CUSTOM_POSTER"
@@ -35,6 +40,11 @@ EXEC = re.compile(
 )
 CWD_SEARCH = re.compile(r"find_dotenv|usecwd|Path\.cwd\(|os\.getcwd\(")
 TOKEN_IN_QUERY = re.compile(r"params\s*=\s*\{[^}]*(?:token|key|secret)", re.I)
+BUNDLE_FORBIDDEN_PATHS = ("scripts", "tests", ".github", "AGENTS.md", "CLAUDE.md", "assets")
+BUNDLE_TEXT_EXT = {".md", ".py", ".txt", ".json", ".example", ""}
+BUNDLE_PY_FORBIDDEN = re.compile(
+    r"\bimportlib\b|__import__\s*\(|\burllib\.request\b|\burlopen\s*\(|\bsocket\b\s*\.")
+BUNDLE_DOC_FORBIDDEN = re.compile(r"\bgit\s+(?:push|tag)\b|\bgh\s+release\b", re.I)
 
 
 def call_bodies(source: str):
@@ -78,12 +88,12 @@ def main() -> int:
             "lib/_env.py searches for .env relative to the working directory. Only the "
             "fixed user config dir and the skill dir are allowed.")
 
-    for path in sorted((ROOT / "scripts").glob("*.py")) + sorted(LIB.glob("*.py")):
+    for path in sorted((REPO / "scripts").glob("*.py")) + sorted(LIB.glob("*.py")):
         if path.name in ("_env.py", pathlib.Path(__file__).name):
             continue
         if DOTENV_CALL.search(code_only(path.read_text(encoding="utf-8"))):
             problems.append(
-                f"{path.relative_to(ROOT)} calls load_dotenv() directly, bypassing lib/_env.py.")
+                f"{path.relative_to(REPO)} calls load_dotenv() directly, bypassing lib/_env.py.")
 
     for name in CLIENTS:
         path = LIB / name
@@ -99,12 +109,27 @@ def main() -> int:
                 problems.append(
                     f"lib/{name}:{line}: credential in the URL query string; use a header.")
 
+    for name in BUNDLE_FORBIDDEN_PATHS:
+        if (ROOT / name).exists():
+            problems.append(f"x-marketing/{name} is installed with the skill; keep it outside the bundle.")
+    for path in sorted(p for p in ROOT.rglob("*") if p.is_file() and "__pycache__" not in p.parts):
+        rel = path.relative_to(REPO)
+        if path.suffix not in BUNDLE_TEXT_EXT and path.name != "LICENSE":
+            problems.append(f"{rel}: non-text file in the installed bundle.")
+            continue
+        text = path.read_text(encoding="utf-8")
+        if path.suffix == ".py" and BUNDLE_PY_FORBIDDEN.search(code_only(text)):
+            problems.append(f"{rel}: dynamic import or raw network helper in the installed bundle.")
+        if BUNDLE_DOC_FORBIDDEN.search(text):
+            problems.append(f"{rel}: tells an agent to push, tag or publish a release.")
+
     if problems:
         print("Security boundaries:\n" + "\n".join("  " + p for p in problems))
         return 1
 
     print("OK: lib/ runs no processes, .env loads credentials only from fixed paths, "
-          "nothing loads it behind load_env, and credentials ride headers without redirects.")
+          "nothing loads it behind load_env, credentials ride headers without redirects, "
+          "and x-marketing/ ships only the skill.")
     return 0
 
 

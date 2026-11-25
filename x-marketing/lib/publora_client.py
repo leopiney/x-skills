@@ -143,7 +143,12 @@ class PubloraClient:
         if platform_settings:
             payload["platformSettings"] = platform_settings
         if media_urls:
-            payload["mediaUrls"] = media_urls
+            for url in media_urls:
+                if not isinstance(url, str) or not url.startswith("https://") or any(
+                    c.isspace() for c in url
+                ):
+                    raise PubloraError(f"media URL must be a plain https:// URL: {url!r}")
+            payload["mediaUrls"] = list(media_urls)
         return self._post("/create-post", payload)
 
     # ---- Connections (read) -----------------------------------------------

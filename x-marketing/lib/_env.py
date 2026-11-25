@@ -15,10 +15,15 @@ Hardened fork notes:
 * Only an allowlist of credential names is ever copied into the environment.
   Nothing this bundle executes or routes traffic through can come from a file.
 * Variables already present in the launch environment always win.
+* On POSIX, a .env is refused (skipped with a warning) unless it is owned by
+  the current user and not readable or writable by group/others (chmod 600).
+  Credentials in a world-readable file are readable by every local account.
 """
 from __future__ import annotations
 
 import os
+import stat
+import sys
 from pathlib import Path
 
 _ENV_LOADED = False
@@ -39,6 +44,26 @@ def env_candidates() -> list[Path]:
     return out
 
 
+def _private_enough(path: Path) -> bool:
+    """True when `path` is a regular file owned by us with no group/other access."""
+    if os.name != "posix":
+        return True
+    try:
+        st = path.stat()
+    except OSError:
+        return False
+    if not stat.S_ISREG(st.st_mode):
+        return False
+    if hasattr(os, "getuid") and st.st_uid != os.getuid():
+        print(f"x-skills: ignoring {path}: not owned by the current user.", file=sys.stderr)
+        return False
+    if st.st_mode & (stat.S_IRWXG | stat.S_IRWXO):
+        print(f"x-skills: ignoring {path}: readable by other users. "
+              f"Fix with: chmod 600 {path}", file=sys.stderr)
+        return False
+    return True
+
+
 def load_env(force: bool = False) -> None:
     """Load allowlisted credentials from the fixed .env locations.
 
@@ -53,7 +78,7 @@ def load_env(force: bool = False) -> None:
         from dotenv import dotenv_values
 
         for path in env_candidates():
-            if not path.is_file():
+            if not path.is_file() or not _private_enough(path):
                 continue
             values = dotenv_values(path)
             for name in _DOTENV_VARIABLES:
