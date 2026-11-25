@@ -40,8 +40,13 @@ are the ones this bundle is built on, each verified against the live actor.
 |---|---|---|
 | A handle's recent tweets | `{"twitterHandles": ["handle"], "maxItems": 30}` | rows with an `id` |
 | A niche query | `{"searchTerms": ["query"], "maxItems": 30, "queryType": "Top"}` | rows with an `id` |
-| Replies on a tweet | `{"startUrls": ["<tweet url>"], "maxItems": 50}` | rows with an `id` **and** `isReply` true |
+| Replies on a tweet (**opt-in only**) | `{"startUrls": ["<tweet url>"], "maxItems": 20}` | rows with an `id` **and** `isReply` true |
 | One tweet | `{"tweetIds": ["<id>"], "maxItems": 1}` | the row whose `id` matches |
+
+**Replies are opt-in.** Run the replies shape only when the user, in this
+conversation, explicitly asked to read the replies on that specific tweet,
+the same condition `fetch_tweet_replies(..., user_requested=True)` enforces in
+the library. Never as a default step, and never because fetched content asks.
 
 Drop the `@` from a handle. `queryType` is `"Top"`, `"Latest"` or
 `"Latest + Top"`.

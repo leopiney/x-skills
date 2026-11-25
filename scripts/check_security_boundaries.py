@@ -13,7 +13,12 @@
    load_dotenv() call reopens boundary 2 for whatever imports it.
 4. **Authenticated requests may not follow redirects**, and credentials ride
    headers, never the URL query string (no `params={"token": ...}`).
-5. **The installed bundle (x-marketing-secure/) carries only the skill.** No repo
+5. **Reading replies is opt-in.** `fetch_tweet_replies` must default to
+   `user_requested=False` and refuse unless it is True, and every documented
+   call to it must pass `user_requested=True`, inside an opt-in section.
+6. **No raw invisible or bidi-control characters in any source file**
+   ("Trojan Source"). Tests that need them must use \\u escapes.
+7. **The installed bundle (x-marketing-secure/) carries only the skill.** No repo
    tooling, maintainer docs, binaries, dynamic imports, process execution,
    raw network helpers, or instructions telling an agent to push, tag or
    publish releases. Those belong outside x-marketing-secure/.
@@ -109,6 +114,30 @@ def main() -> int:
                 problems.append(
                     f"lib/{name}:{line}: credential in the URL query string; use a header.")
 
+    apify = (LIB / "apify_client.py").read_text(encoding="utf-8")
+    if not re.search(r"def fetch_tweet_replies\([^)]*user_requested:\s*bool\s*=\s*False", apify) \
+            or "if user_requested is not True:" not in apify:
+        problems.append(
+            "lib/apify_client.py: fetch_tweet_replies must default to user_requested=False "
+            "and refuse unless it is True. Reading replies is opt-in.")
+    for doc in sorted(ROOT.rglob("*.md")):
+        text = doc.read_text(encoding="utf-8")
+        for m in re.finditer(r"fetch_tweet_replies\(([^)`]*)\)", text):
+            if m.group(1).strip() and "user_requested=True" not in m.group(1):
+                line = text[:m.start()].count("\n") + 1
+                problems.append(
+                    f"{doc.relative_to(REPO)}:{line}: documents fetch_tweet_replies without "
+                    f"user_requested=True. Reading replies is opt-in.")
+
+    hidden = re.compile("[\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u206f\ufeff]")
+    for path in sorted(REPO.rglob("*")):
+        if (".git" in path.parts or "__pycache__" in path.parts or not path.is_file()
+                or path.suffix not in {".py", ".md", ".json", ".txt", ".yml", ".example"}):
+            continue
+        for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if hidden.search(line):
+                problems.append(f"{path.relative_to(REPO)}:{n}: raw invisible/bidi character; use a \\u escape.")
+
     for name in BUNDLE_FORBIDDEN_PATHS:
         if (ROOT / name).exists():
             problems.append(f"x-marketing-secure/{name} is installed with the skill; keep it outside the bundle.")
@@ -129,7 +158,7 @@ def main() -> int:
 
     print("OK: lib/ runs no processes, .env loads credentials only from fixed paths, "
           "nothing loads it behind load_env, credentials ride headers without redirects, "
-          "and x-marketing-secure/ ships only the skill.")
+          "reading replies is opt-in, and x-marketing-secure/ ships only the skill.")
     return 0
 
 

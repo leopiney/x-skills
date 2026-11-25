@@ -123,6 +123,7 @@ Run from repo root:
 cd x-marketing-secure && python3 -c "from lib import publish, parse_x_url, PubloraClient; print('OK')" && cd ..
 ls x-marketing-secure/skills/ | wc -l        # must equal 9
 python3 tests/test_url_parser.py
+python3 -I tests/test_security_behavior.py
 python3 scripts/check_frontmatter.py   # parses; a dir count does not prove a skill loads
 python3 scripts/check_no_secrets.py    # .gitignore does not stop a rename of a tracked file
 python3 scripts/check_markdown_references.py  # run from inside the repo; it anchors on its own path

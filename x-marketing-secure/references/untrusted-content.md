@@ -5,7 +5,7 @@ wrote.
 
 ## The problem
 
-These skills pull text nobody on your side authored straight into the model's
+These skills pull text nobody on your side authored into the model's
 context: `x-audience-insights`, `x-hook-extractor` and `x-reply-drafter`. Tweet bodies, reply threads, display names and bios all arrive from Apify exactly as the person on X typed them.
 
 The same agent that reads that text can also publish to the user's X
@@ -52,8 +52,11 @@ The rule above is the primary control. The library backs it up:
   zero-width and bidi-control characters (a common way to hide an instruction
   from the human reviewing the output), truncates long text, validates handles
   and ids, and caps every fetch at 100 items.
-- `fetch_tweet_replies` only accepts genuine x.com / twitter.com tweet URLs
-  and rebuilds the URL from the parsed id before sending it.
+- Reading replies is opt-in. `fetch_tweet_replies` refuses to run unless
+  called with `user_requested=True` (set only when the user explicitly asks to
+  read the replies on a specific tweet), caps them at 30, only accepts genuine
+  x.com / twitter.com tweet URLs, and rebuilds the URL from the parsed id
+  before sending it.
 - `lib.publish()` refuses to run unless called with `approved=True`, which must
   only be set after the user approves the exact draft in their own words.
 - No module in `lib/` executes a subprocess, so fetched text has no path to a

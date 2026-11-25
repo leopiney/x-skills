@@ -13,7 +13,7 @@ from .url_parser import parse_x_url
 from .publora_client import PubloraClient, PubloraError
 from .pixfaro_client import PixfaroClient, PixfaroError
 from .approval import render_approval_card
-from .apify_client import ApifyClient, ApifyError, ApifyAuthError
+from .apify_client import ApifyClient, ApifyError, ApifyAuthError, RepliesNotRequested
 from .backend_selector import (
     image_backend,
     active_backend,
@@ -35,6 +35,7 @@ __all__ = [
     "ApifyClient",
     "ApifyError",
     "ApifyAuthError",
+    "RepliesNotRequested",
     "PixfaroClient",
     "PixfaroError",
     "image_backend",

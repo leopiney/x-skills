@@ -9,6 +9,7 @@ Once installed, just ask Claude Code or Codex things like:
 - "Write a tweet about [topic]"
 - "Turn these notes into a thread"
 - "What's working in my niche on X right now? (reads real data via Apify)"
+- "Read the replies on <tweet url>" (replies are only ever read when you ask like this)
 - "Rewrite this tweet so it doesn't sound like AI"
 
 The right skill activates automatically. Then you review and approve.
@@ -23,7 +24,7 @@ stay out of your install.
 ### Any agent (skills CLI)
 
 ```bash
-npx skills add https://github.com/leopiney/x-skills/tree/v1.0.41/x-marketing-secure
+npx skills add https://github.com/leopiney/x-skills/tree/v1.0.42/x-marketing-secure
 ```
 
 ### Claude Code (CLI / VS Code / JetBrains)
@@ -38,8 +39,8 @@ npx skills add https://github.com/leopiney/x-skills/tree/v1.0.41/x-marketing-sec
 ```bash
 git clone https://github.com/leopiney/x-skills.git
 cd x-skills
-git -c gpg.ssh.allowedSignersFile=allowed_signers verify-tag v1.0.41   # must print: Good "git" signature
-git checkout v1.0.41
+git -c gpg.ssh.allowedSignersFile=allowed_signers verify-tag v1.0.42   # must print: Good "git" signature
+git checkout v1.0.42
 ```
 
 ### Python dependencies (only for auto-publish / data reads / images)
@@ -223,7 +224,7 @@ x-skills/
 | Runtime | Auto-discovers skills? | Setup |
 |---|---|---|
 | **Claude Code** (CLI, Desktop, Web, IDE) | Yes | Install via plugin or clone. Skills activate on matching prompts. |
-| **Codex CLI** | Yes | `npx skills add https://github.com/leopiney/x-skills/tree/v1.0.41/x-marketing-secure` (links into `~/.agents/skills`). |
+| **Codex CLI** | Yes | `npx skills add https://github.com/leopiney/x-skills/tree/v1.0.42/x-marketing-secure` (links into `~/.agents/skills`). |
 | **Anthropic Managed Agents** (`/v1/agents`) | Yes | Pass skill files in the agent context. |
 | **Cursor / Cline / Aider** | Manual | Read `SKILL.md` files as prompt context; import `lib/` as Python. |
 | **LangChain / AutoGen** | No | Use `lib/` as a package; feed `references/` as prompt context. |

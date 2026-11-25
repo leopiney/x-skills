@@ -47,6 +47,27 @@ results. The skill and its folder are renamed `x-marketing-secure`, which gives
 it a fresh skills.sh identity that gets audited against the current code. No
 code changed from v1.0.40.
 
+## Round 4 (v1.0.42): reading replies is opt-in
+
+Snyk's remaining W011 (MEDIUM, 0.30) singled out `fetch_tweet_replies`:
+anyone on X can reply to the user's tweet, and the audience-insights workflow
+read replies by default.
+
+- `fetch_tweet_replies` now raises `RepliesNotRequested` unless called with
+  `user_requested=True`, before any request is sent. Replies are capped at 30.
+- `x-audience-insights` no longer reads replies in its workflow. A separate
+  "Reading replies (opt-in only)" section allows it only when the user
+  explicitly asks to read the replies on a specific tweet. The MCP connector
+  path documents the same condition.
+- `check_security_boundaries.py` fails if the opt-in default changes or a
+  documented call omits `user_requested=True`. It now also rejects raw
+  invisible/bidi characters anywhere in the repo.
+- The behavior tests moved into the repo (`tests/test_security_behavior.py`)
+  and run in CI.
+
+W011 is expected to remain at some level, because the skill still reads tweets
+written by strangers when asked.
+
 ## Data flow
 
 - **Apify** (`api.apify.com`): receives the handle, search query or tweet id
