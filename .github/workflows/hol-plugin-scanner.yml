@@ -18,7 +18,7 @@ jobs:
       - name: HOL Plugin Scanner
         uses: hashgraph-online/ai-plugin-scanner-action@013b123a036a252a6d74ddb52836ee923498150c # v1.2.817
         with:
-          plugin_dir: "x-marketing"
+          plugin_dir: "x-marketing-secure"
           mode: scan
           min_score: 80
           fail_on_severity: high

@@ -22,7 +22,7 @@ import pathlib
 import re
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent / "x-marketing"  # the installable bundle
+ROOT = pathlib.Path(__file__).resolve().parent.parent / "x-marketing-secure"  # the installable bundle
 sys.path.insert(0, str(ROOT))
 
 DOC = ROOT / "references" / "mcp-read-layer.md"

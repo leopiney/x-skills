@@ -29,7 +29,7 @@ skills.sh re-scanned v1.0.39 (commit `00393bb`): Socket **Pass**, Snyk Warn
 | Finding | Source | What changed |
 |---|---|---|
 | FileRep "1 file identified as malware" (still CRITICAL) | Trust Hub | FileRep judges a file by its hash. `lib/url_parser.py` was byte-identical to upstream, and upstream's audit named it as the automated malware hit (a false positive: plain URL regexes plus a self-test full of fake attacker URLs). The self-test moved to `tests/test_url_parser.py`, outside the installed skill, so the shipped file has a new hash. |
-| DYNAMIC_EXECUTION: `importlib` in `scripts/check_mcp_mapping.py` | Trust Hub | The skill now lives in `x-marketing/`, and only that folder is installed. CI scripts, tests, `.github/` and maintainer docs stay in the repo and never reach `~/.agents/skills`. |
+| DYNAMIC_EXECUTION: `importlib` in `scripts/check_mcp_mapping.py` | Trust Hub | The skill now lives in `x-marketing-secure/`, and only that folder is installed. CI scripts, tests, `.github/` and maintainer docs stay in the repo and never reach `~/.agents/skills`. |
 | W013: instructions to push tags and create releases | Snyk | Same: `AGENTS.md`/`CLAUDE.md` are no longer installed, and they now say agents tag or release only when asked. `check_security_boundaries.py` fails if the bundle ever carries such instructions, dev tooling, binaries, dynamic imports or raw network helpers. |
 | W012: tag not cryptographically verified | Snyk | Release tags are SSH-signed. Verify with `git -c gpg.ssh.allowedSignersFile=allowed_signers verify-tag v1.0.40`. The "individually owned repo" part is inherent to a fork. |
 | CREDENTIALS_UNSAFE | Trust Hub | On POSIX, a `.env` is ignored (with a warning) unless it is owned by you and `chmod 600`. Publora `media_urls` must be plain `https://` URLs. |
@@ -38,6 +38,14 @@ Expected to remain because they describe what the skill does:
 DATA_EXFILTRATION (drafts go to Publora, prompts to Pixfaro, queries to Apify),
 EXTERNAL_DOWNLOADS (hash-pinned `pip install`), and INDIRECT_PROMPT_INJECTION /
 W011 (it reads tweets written by strangers).
+
+## Round 3 (v1.0.41): renamed to `x-marketing-secure`
+
+skills.sh audits a skill automatically only on its first install, and it
+documents no way to request a re-scan. So v1.0.40 kept showing the v1.0.39
+results. The skill and its folder are renamed `x-marketing-secure`, which gives
+it a fresh skills.sh identity that gets audited against the current code. No
+code changed from v1.0.40.
 
 ## Data flow
 

@@ -13,10 +13,10 @@
    load_dotenv() call reopens boundary 2 for whatever imports it.
 4. **Authenticated requests may not follow redirects**, and credentials ride
    headers, never the URL query string (no `params={"token": ...}`).
-5. **The installed bundle (x-marketing/) carries only the skill.** No repo
+5. **The installed bundle (x-marketing-secure/) carries only the skill.** No repo
    tooling, maintainer docs, binaries, dynamic imports, process execution,
    raw network helpers, or instructions telling an agent to push, tag or
-   publish releases. Those belong outside x-marketing/.
+   publish releases. Those belong outside x-marketing-secure/.
 
 Run from the repo root:
 
@@ -27,7 +27,7 @@ import re
 import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-ROOT = REPO / "x-marketing"  # the installable bundle
+ROOT = REPO / "x-marketing-secure"  # the installable bundle
 LIB = ROOT / "lib"
 ENV = LIB / "_env.py"
 POSTER = "X_SKILLS_CUSTOM_POSTER"
@@ -111,7 +111,7 @@ def main() -> int:
 
     for name in BUNDLE_FORBIDDEN_PATHS:
         if (ROOT / name).exists():
-            problems.append(f"x-marketing/{name} is installed with the skill; keep it outside the bundle.")
+            problems.append(f"x-marketing-secure/{name} is installed with the skill; keep it outside the bundle.")
     for path in sorted(p for p in ROOT.rglob("*") if p.is_file() and "__pycache__" not in p.parts):
         rel = path.relative_to(REPO)
         if path.suffix not in BUNDLE_TEXT_EXT and path.name != "LICENSE":
@@ -129,7 +129,7 @@ def main() -> int:
 
     print("OK: lib/ runs no processes, .env loads credentials only from fixed paths, "
           "nothing loads it behind load_env, credentials ride headers without redirects, "
-          "and x-marketing/ ships only the skill.")
+          "and x-marketing-secure/ ships only the skill.")
     return 0
 
 

@@ -14,7 +14,7 @@ from pathlib import Path
 import re
 
 
-ROOT = Path(__file__).resolve().parents[1] / "x-marketing"  # the installable bundle
+ROOT = Path(__file__).resolve().parents[1] / "x-marketing-secure"  # the installable bundle
 SKILLS = ROOT / "skills"
 REFERENCE = re.compile(r"`((?:\.\.?/)*[A-Za-z0-9_.\-]+(?:/[A-Za-z0-9_.\-]+)*\.md)(?:#[^`]*)?`")
 

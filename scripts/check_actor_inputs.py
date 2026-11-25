@@ -23,7 +23,7 @@ import pathlib
 import urllib.error
 import urllib.request
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent / "x-marketing"  # the installable bundle
+ROOT = pathlib.Path(__file__).resolve().parent.parent / "x-marketing-secure"  # the installable bundle
 CLIENT = ROOT / "lib" / "apify_client.py"
 
 USER_AGENT = "skills-actor-check/1"

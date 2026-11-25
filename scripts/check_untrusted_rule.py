@@ -21,7 +21,7 @@ import pathlib
 import re
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent / "x-marketing"  # the installable bundle
+ROOT = pathlib.Path(__file__).resolve().parent.parent / "x-marketing-secure"  # the installable bundle
 SKILLS = sorted(d for d in (ROOT / "skills").iterdir() if (d / "SKILL.md").is_file())
 CANONICAL = ROOT / "references" / "untrusted-content.md"
 SECTION = re.compile(r"^## Untrusted content\b[^\n]*$", re.M)

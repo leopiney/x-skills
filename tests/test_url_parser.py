@@ -1,11 +1,11 @@
-"""Tests for x-marketing/lib/url_parser.py. Not shipped with the installed skill.
+"""Tests for x-marketing-secure/lib/url_parser.py. Not shipped with the installed skill.
 
 Run from the repo root:  python3 tests/test_url_parser.py
 """
 import pathlib
 import sys
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "x-marketing"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "x-marketing-secure"))
 from lib.url_parser import parse_x_url  # noqa: E402
 
 

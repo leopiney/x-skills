@@ -19,7 +19,7 @@ jobs:
       - name: Install YAML parser
         run: python3 -m pip install --quiet pyyaml
       - name: Install runtime deps from the hash-pinned lockfile
-        run: python3 -m pip install --quiet --require-hashes -r x-marketing/requirements-lock.txt
+        run: python3 -m pip install --quiet --require-hashes -r x-marketing-secure/requirements-lock.txt
       - name: URL parser tests
         run: python3 tests/test_url_parser.py
       - name: Check SKILL.md frontmatter parses

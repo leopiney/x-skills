@@ -27,7 +27,7 @@ except ImportError:  # pragma: no cover
     print("PyYAML is required: pip install pyyaml", file=sys.stderr)
     raise SystemExit(2)
 
-ROOT = Path(__file__).resolve().parents[1] / "x-marketing"  # the installable bundle
+ROOT = Path(__file__).resolve().parents[1] / "x-marketing-secure"  # the installable bundle
 FRONTMATTER = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 REQUIRED = ("name", "description")
 

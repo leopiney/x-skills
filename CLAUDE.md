@@ -6,20 +6,20 @@ otherwise.
 
 ## Repository layout
 
-- `x-marketing/` is the installable skill and the ONLY folder users install
-  (`npx skills add https://github.com/leopiney/x-skills/tree/<tag>/x-marketing`).
+- `x-marketing-secure/` is the installable skill and the ONLY folder users install
+  (`npx skills add https://github.com/leopiney/x-skills/tree/<tag>/x-marketing-secure`).
   It holds `SKILL.md`, `skills/`, `references/`, `lib/`, `requirements*.txt`,
   `.env.example`, `LICENSE` and the plugin manifests. Nothing that executes,
   fetches, or instructs an agent to change repos or services belongs in it.
 - Repo tooling stays outside the bundle: `scripts/` (CI checks), `tests/`,
   `.github/`, and these maintainer docs. Paths below that name `skills/`,
-  `references/` or `lib/` mean the ones inside `x-marketing/`.
+  `references/` or `lib/` mean the ones inside `x-marketing-secure/`.
 
 ## Versioning
 
-- Single source of truth: `x-marketing/.claude-plugin/plugin.json`,
-  `x-marketing/.codex-plugin/plugin.json`, and the root
-  `.claude-plugin/marketplace.json` (source `./x-marketing`). Plugin manifests must always match on
+- Single source of truth: `x-marketing-secure/.claude-plugin/plugin.json`,
+  `x-marketing-secure/.codex-plugin/plugin.json`, and the root
+  `.claude-plugin/marketplace.json` (source `./x-marketing-secure`). Plugin manifests must always match on
   package name and version; marketplace entries must point to the same package;
   author, license, homepage, and the public skill-bundle description must stay
   aligned.
@@ -134,8 +134,8 @@ otherwise.
 Run from repo root:
 
 ```bash
-cd x-marketing && python3 -c "from lib import publish, illustrate, refine, PixfaroClient, parse_x_url, PubloraClient; print('OK')" && cd ..
-ls x-marketing/skills/ | wc -l        # must equal 9
+cd x-marketing-secure && python3 -c "from lib import publish, illustrate, refine, PixfaroClient, parse_x_url, PubloraClient; print('OK')" && cd ..
+ls x-marketing-secure/skills/ | wc -l        # must equal 9
 python3 tests/test_url_parser.py
 python3 scripts/check_frontmatter.py   # parses; a dir count does not prove a skill loads
 python3 scripts/check_no_secrets.py    # .gitignore does not stop a rename of a tracked file
@@ -144,9 +144,9 @@ python3 scripts/check_untrusted_rule.py  # the rule must sit in the skills, not 
 python3 scripts/check_text_encoding.py  # a bare read_text() is cp1252 on Windows, mojibake or a crash
 python3 scripts/check_security_boundaries.py  # no process execution, fixed .env paths, header auth, no redirects
 python3 scripts/check_mcp_mapping.py  # the connector path must produce the library's records, not a second shape
-grep -rnP '\x{2014}|\x{2013}' x-marketing/skills/*/SKILL.md x-marketing/SKILL.md | grep -i '^.*description:'   # must be empty
-python3 -m json.tool x-marketing/.codex-plugin/plugin.json >/dev/null
-python3 -m json.tool x-marketing/.claude-plugin/plugin.json >/dev/null
+grep -rnP '\x{2014}|\x{2013}' x-marketing-secure/skills/*/SKILL.md x-marketing-secure/SKILL.md | grep -i '^.*description:'   # must be empty
+python3 -m json.tool x-marketing-secure/.codex-plugin/plugin.json >/dev/null
+python3 -m json.tool x-marketing-secure/.claude-plugin/plugin.json >/dev/null
 python3 -m json.tool .claude-plugin/marketplace.json >/dev/null
 ```
 
